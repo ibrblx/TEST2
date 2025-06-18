@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enviar correo paso a paso - Iberia Style</title>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.4.0/dist/email.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #ff0000, #990000);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h2 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 20px;
+    }
+
+    .form-step {
+      display: none;
+    }
+
+    .form-step.active {
+      display: block;
+    }
+
+    input, textarea, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    input, textarea {
+      width: 80%;
+      max-width: 400px;
+    }
+
+    button {
+      background-color: white;
+      color: #d10000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: grey;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      h2 {
+        font-size: 24px;
+      }
+
+      input, textarea {
+        width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Enviar correo paso a paso</h2>
+  <p>Completa cada paso para enviar tu correo electrónico</p>
+
+  <!-- Paso 0: Términos -->
+  <div id="terms" class="form-step active">
+    <p><strong>Términos y condiciones:</strong><br>
+      Al enviar este correo, aceptas nuestra política de privacidad y uso responsable del sistema.</p>
+    <button onclick="aceptarTerminos()">Aceptar y continuar</button>
+  </div>
+
+  <!-- Paso 1: Correo destino -->
+  <div id="step1" class="form-step">
+    <input type="email" id="to_email" placeholder="Correo del destinatario">
+    <br>
+    <button onclick="validarCorreo()">Siguiente</button>
+  </div>
+
+  <!-- Paso 2: Asunto -->
+  <div id="step2" class="form-step">
+    <input type="text" id="subject" placeholder="Asunto del mensaje">
+    <br>
+    <button onclick="validarAsunto()">Siguiente</button>
+  </div>
+
+  <!-- Paso 3: Mensaje -->
+  <div id="step3" class="form-step">
+    <textarea id="message_body" rows="4" placeholder="Escribe tu mensaje"></textarea>
+    <br>
+    <button onclick="validarMensaje()">Siguiente</button>
+  </div>
+
+  <!-- Paso 4: Tu correo -->
+  <div id="step4" class="form-step">
+    <input type="email" id="from_email" placeholder="Tu correo (remitente)">
+    <br>
+    <button onclick="validarRemitente()">Enviar correo</button>
+  </div>
+
+  <!-- Resultado -->
+  <div id="message"></div>
+
+  <script>
+    // Inicializar EmailJS
+    emailjs.init("81Meohv650NzKKqi7");
+
+    let pasoActual = 0;
+    let temporizador = 0;
+
+    function mostrarPaso(numero) {
+      const pasos = document.querySelectorAll(".form-step");
+      pasos.forEach((paso, i) => {
+        paso.classList.toggle("active", i === numero);
+      });
+      pasoActual = numero;
+    }
+
+    function aceptarTerminos() {
+      mostrarPaso(1);
+    }
+
+    function validarCorreo() {
+      const email = document.getElementById("to_email").value;
+      if (!email.includes("@")) {
+        alert("Por favor, introduce un correo válido.");
+        return;
+      }
+      mostrarPaso(2);
+    }
+
+    function validarAsunto() {
+      const asunto = document.getElementById("subject").value;
+      if (asunto.trim() === "") {
+        alert("Por favor, escribe un asunto.");
+        return;
+      }
+      mostrarPaso(3);
+    }
+
+    function validarMensaje() {
+      const mensaje = document.getElementById("message_body").value;
+      if (mensaje.trim() === "") {
+        alert("Por favor, escribe un mensaje.");
+        return;
+      }
+      mostrarPaso(4);
+    }
+
+    function validarRemitente() {
+      const remitente = document.getElementById("from_email").value;
+      if (!remitente.includes("@")) {
+        alert("Por favor, introduce tu correo válido.");
+        return;
+      }
+
+      if (temporizador > 0) {
+        document.getElementById("message").innerText = `Espera ${temporizador} segundos antes de enviar otro mensaje.`;
+        return;
+      }
+
+      enviarCorreo();
+    }
+
+    function enviarCorreo() {
+      const toEmail = document.getElementById("to_email").value;
+      const subject = document.getElementById("subject").value;
+      const message = document.getElementById("message_body").value;
+      const fromEmail = document.getElementById("from_email").value;
+
+      const params = {
+        to_email: toEmail,
+        subject: subject,
+        message: message.replace(/\n/g, "<br>"),
+        from: fromEmail,
+        date: new Date().toLocaleString("es-ES", {
+          dateStyle: "long",
+          timeStyle: "short"
+        })
+      };
+
+      emailjs.send("service_xvkjy3n", "template_463xlfg", params)
+        .then(() => {
+          document.getElementById("message").innerText = "✅ ¡Correo enviado con éxito!";
+          iniciarTemporizador(40);
+        })
+        .catch((error) => {
+          console.error("Error al enviar:", error);
+          document.getElementById("message").innerText = "❌ Error al enviar el correo.";
+        });
+    }
+
+    function iniciarTemporizador(segundos) {
+      temporizador = segundos;
+      const intervalo = setInterval(() => {
+        temporizador--;
+        document.getElementById("message").innerText = `Debes esperar ${temporizador} segundos para enviar otro mensaje.`;
+        if (temporizador <= 0) {
+          clearInterval(intervalo);
+          document.getElementById("message").innerText = "";
+        }
+      }, 1000);
+    }
+  </script>
+
+</body>
+</html>
